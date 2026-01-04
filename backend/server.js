@@ -58,6 +58,41 @@ app.post('/api/register', async (req, res) => {
     }
 });
 
+//Logowanie użytkowanika
+app.post('/api/login', async (req, res) => {
+    try {
+        const {email,password} = req.body;
+
+        if (!email || !password){
+            return res.status(400).json({error: 'Email i hasło są wymagane'});
+        }
+
+        const user = await User.findOne({email});
+        if (!user){
+            return res.status(401).json({error: 'Nieprawidłowe dane logowania'});
+        }
+
+        const passwordOk = await bcrypt.compare(password, user.password);
+        if(!password){
+            return res.status(401).json({error: 'Nieprawidłowe dane logowania'});
+        }
+        //token 
+        const fakeToken = `FAKE_TOKEN-${user._id}`;
+
+        res.json({
+            message: 'Zalogowano',
+            token: fakeToken,
+            user:{
+                id: user._id,
+                email: user.email
+            }
+        });
+    } catch(err){
+        console.error('Błąd logowania:',err);
+        res.status(500).json({error: 'Błąd serwera przy logowaniu'});
+    }
+});
+
 app.listen(process.env.PORT, () => {
     console.log(`Serwer na http://localhost:${process.env.PORT}`);
 });
