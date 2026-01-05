@@ -223,113 +223,192 @@ onMounted(() => {
     <h3>Lista kategorii</h3>
 
     <ul style="list-style: none; padding-left: 0;">
-      <li
-        v-for="cat in categories"
-        :key="cat._id"
-        style="
-          margin-bottom: 4px;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 4px 8px;
-          border-radius: 4px;
-        "
-        class="category-row"
-      >
-        <!-- lewa część: nazwa lub input w trybie edycji -->
-        <div style="flex: 1;">
-          <!-- tryb edycji -->
-          <template v-if="editingId === cat._id">
-            <input
-              v-model="editingName"
-              style="width: 100%; padding: 2px 4px;"
-            />
-          </template>
+      <!-- Wyświetl tylko kategorie główne -->
+      <template v-for="mainCat in mainCategories" :key="mainCat._id">
+        <li
+          style="
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 4px 8px;
+            border-radius: 4px;
+          "
+          class="category-row"
+        >
+          <div style="flex: 1; font-weight: 600;">
+            <template v-if="editingId === mainCat._id">
+              <input
+                v-model="editingName"
+                style="width: 100%; padding: 2px 4px;"
+              />
+            </template>
+            <template v-else>
+              {{ mainCat.name }}
+            </template>
+          </div>
 
-          <!-- tryb normalny -->
-          <template v-else>
-            <span v-if="!cat.parentId" style="font-weight: 600;">
-              {{ cat.name }}
-            </span>
-            <span v-else style="padding-left: 16px;">
-              - {{ cat.name }}
-            </span>
-          </template>
-        </div>
+          <div class="category-actions" style="display: flex; gap: 6px;">
+            <template v-if="editingId === mainCat._id">
+              <button
+                @click="saveEdit(mainCat)"
+                style="
+                  padding: 2px 8px;
+                  font-size: 12px;
+                  border-radius: 4px;
+                  border: 1px solid #4caf50;
+                  background-color: #e8f5e9;
+                  color: #2e7d32;
+                  cursor: pointer;
+                "
+              >
+                Zapisz
+              </button>
+              <button
+                @click="cancelEdit"
+                style="
+                  padding: 2px 8px;
+                  font-size: 12px;
+                  border-radius: 4px;
+                  border: 1px solid #9e9e9e;
+                  background-color: #f5f5f5;
+                  color: #424242;
+                  cursor: pointer;
+                "
+              >
+                Anuluj
+              </button>
+            </template>
+            <template v-else>
+              <button
+                @click="startEdit(mainCat)"
+                style="
+                  padding: 2px 8px;
+                  font-size: 12px;
+                  border-radius: 4px;
+                  border: 1px solid #64b5f6;
+                  background-color: #e3f2fd;
+                  color: #1565c0;
+                  cursor: pointer;
+                "
+              >
+                Edytuj
+              </button>
+              <button
+                @click="deleteCategory(mainCat)"
+                style="
+                  padding: 2px 8px;
+                  font-size: 12px;
+                  border-radius: 4px;
+                  border: 1px solid #e57373;
+                  background-color: #ffebee;
+                  color: #c62828;
+                  cursor: pointer;
+                "
+              >
+                Usuń
+              </button>
+            </template>
+          </div>
+        </li>
 
-        <!-- prawa część: akcje (pokazywane na hover) -->
-        <div class="category-actions" style="display: flex; gap: 6px;">
-          <template v-if="editingId === cat._id">
-            <button
-              @click="saveEdit(cat)"
-              style="
-                padding: 2px 8px;
-                font-size: 12px;
-                border-radius: 4px;
-                border: 1px solid #4caf50;
-                background-color: #e8f5e9;
-                color: #2e7d32;
-                cursor: pointer;
-              "
-            >
-              Zapisz
-            </button>
-            <button
-              @click="cancelEdit"
-              style="
-                padding: 2px 8px;
-                font-size: 12px;
-                border-radius: 4px;
-                border: 1px solid #9e9e9e;
-                background-color: #f5f5f5;
-                color: #424242;
-                cursor: pointer;
-              "
-            >
-              Anuluj
-            </button>
-          </template>
+        <!-- Podkategorie tego rodzica -->
+        <template
+          v-for="subCat in categories.filter(c => c.parentId === mainCat._id)"
+          :key="subCat._id"
+        >
+          <li
+            style="
+              margin-bottom: 4px;
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              padding: 4px 8px;
+              padding-left: 24px;
+              border-radius: 4px;
+            "
+            class="category-row"
+          >
+            <div style="flex: 1;">
+              <template v-if="editingId === subCat._id">
+                <input
+                  v-model="editingName"
+                  style="width: 100%; padding: 2px 4px;"
+                />
+              </template>
+              <template v-else>
+                - {{ subCat.name }}
+              </template>
+            </div>
 
-          <template v-else>
-            <button
-              @click="startEdit(cat)"
-              style="
-                padding: 2px 8px;
-                font-size: 12px;
-                border-radius: 4px;
-                border: 1px solid #64b5f6;
-                background-color: #e3f2fd;
-                color: #1565c0;
-                cursor: pointer;
-              "
-            >
-              Edytuj
-            </button>
-            <button
-              @click="deleteCategory(cat)"
-              style="
-                padding: 2px 8px;
-                font-size: 12px;
-                border-radius: 4px;
-                border: 1px solid #e57373;
-                background-color: #ffebee;
-                color: #c62828;
-                cursor: pointer;
-              "
-            >
-              Usuń
-            </button>
-          </template>
-        </div>
-      </li>
+            <div class="category-actions" style="display: flex; gap: 6px;">
+              <template v-if="editingId === subCat._id">
+                <button
+                  @click="saveEdit(subCat)"
+                  style="
+                    padding: 2px 8px;
+                    font-size: 12px;
+                    border-radius: 4px;
+                    border: 1px solid #4caf50;
+                    background-color: #e8f5e9;
+                    color: #2e7d32;
+                    cursor: pointer;
+                  "
+                >
+                  Zapisz
+                </button>
+                <button
+                  @click="cancelEdit"
+                  style="
+                    padding: 2px 8px;
+                    font-size: 12px;
+                    border-radius: 4px;
+                    border: 1px solid #9e9e9e;
+                    background-color: #f5f5f5;
+                    color: #424242;
+                    cursor: pointer;
+                  "
+                >
+                  Anuluj
+                </button>
+              </template>
+              <template v-else>
+                <button
+                  @click="startEdit(subCat)"
+                  style="
+                    padding: 2px 8px;
+                    font-size: 12px;
+                    border-radius: 4px;
+                    border: 1px solid #64b5f6;
+                    background-color: #e3f2fd;
+                    color: #1565c0;
+                    cursor: pointer;
+                  "
+                >
+                  Edytuj
+                </button>
+                <button
+                  @click="deleteCategory(subCat)"
+                  style="
+                    padding: 2px 8px;
+                    font-size: 12px;
+                    border-radius: 4px;
+                    border: 1px solid #e57373;
+                    background-color: #ffebee;
+                    color: #c62828;
+                    cursor: pointer;
+                  "
+                >
+                  Usuń
+                </button>
+              </template>
+            </div>
+          </li>
+        </template>
+      </template>
     </ul>
   </div>
 </template>
-
-
-
-
-
 
 <style scoped>
 .category-row {
