@@ -351,19 +351,22 @@ app.delete('/api/expense/:id', async (req, res) => {
 })
 
 
-// Aktualizacja kwoty dochodu
+// Aktualizacja dochodu - wszystkie pola
 app.put('/api/income/:id', async (req, res) => {
   try {
     const { id } = req.params
-    const { amount } = req.body
+    const { amount, type, category, subcategory, date } = req.body
 
-    if (amount === undefined || amount === null) {
-      return res.status(400).json({ error: 'Pole amount jest wymagane' })
-    }
+    const updateData = {}
+    if (amount !== undefined) updateData.amount = Number(amount)
+    if (type) updateData.type = type
+    if (category) updateData.category = category
+    if (subcategory !== undefined) updateData.subcategory = subcategory
+    if (date) updateData.createdAt = new Date(date)
 
     const updated = await Income.findByIdAndUpdate(
       id,
-      { amount: Number(amount) },
+      updateData,
       { new: true }
     )
 
@@ -381,19 +384,22 @@ app.put('/api/income/:id', async (req, res) => {
   }
 })
 
-// Aktualizacja kwoty wydatku
+// Aktualizacja wydatku - wszystkie pola
 app.put('/api/expense/:id', async (req, res) => {
   try {
     const { id } = req.params
-    const { amount } = req.body
+    const { amount, type, category, subcategory, date } = req.body
 
-    if (amount === undefined || amount === null) {
-      return res.status(400).json({ error: 'Pole amount jest wymagane' })
-    }
+    const updateData = {}
+    if (amount !== undefined) updateData.amount = Number(amount)
+    if (type) updateData.type = type
+    if (category) updateData.category = category
+    if (subcategory !== undefined) updateData.subcategory = subcategory
+    if (date) updateData.createdAt = new Date(date)
 
     const updated = await Expense.findByIdAndUpdate(
       id,
-      { amount: Number(amount) },
+      updateData,
       { new: true }
     )
 
