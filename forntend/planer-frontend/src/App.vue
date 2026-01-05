@@ -1,11 +1,27 @@
-<script setup></script>
+<script setup>
+import LoginView from './views/LoginView.vue'
+</script>
 
 <template>
-  <h1>You did it!</h1>
-  <p>
-    Visit <a href="https://vuejs.org/" target="_blank" rel="noopener">vuejs.org</a> to read the
-    documentation
-  </p>
+  <div>
+    <!---Główny nagłówek aplikacji -->
+    <header style="padding: 10px; background: #2c3e50; color: white;">
+      PLANER_OSZCZEDNOSCI
+    </header>
+
+    <!--Widoki-->
+    <main>
+      <LoginView/> 
+    </main>
+  </div>
 </template>
 
-<style scoped></style>
+<style>
+body{
+  margin:0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+main {
+  padding: 20px;
+}
+</style>
