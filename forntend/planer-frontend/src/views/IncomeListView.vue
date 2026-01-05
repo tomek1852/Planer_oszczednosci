@@ -11,12 +11,14 @@ const newType = ref('realny')
 const newAmount = ref(0)
 const newCategory = ref('')      // _id kategorii
 const newSubcategory = ref('')   // _id podkategorii
+const newDate = ref('')   
 
 // WYDATKI – pola
 const newExpType = ref('realny')
 const newExpAmount = ref(0)
 const newExpCategory = ref('')
 const newExpSubcategory = ref('')
+const newExpDate = ref('')
 
 // KATEGORIE
 const incomeCategories = ref([])   // wszystkie kategorie kind=income
@@ -132,7 +134,8 @@ const addIncome = async () => {
         type: newType.value,
         amount: Number(newAmount.value),
         category: cat ? cat.name : '',
-        subcategory: sub ? sub.name : ''
+        subcategory: sub ? sub.name : '',
+        date: newDate.value || null
       })
     })
 
@@ -148,6 +151,7 @@ const addIncome = async () => {
     newAmount.value = 0
     newCategory.value = ''
     newSubcategory.value = ''
+    newDate.value = ''
   } catch (err) {
     console.error('Błąd dodawania dochodu:', err)
     message.value = 'Problem z połączeniem z serwerem'
@@ -202,7 +206,8 @@ const addExpense = async () => {
         type: newExpType.value,
         amount: Number(newExpAmount.value),
         category: cat ? cat.name : '',
-        subcategory: sub ? sub.name : ''
+        subcategory: sub ? sub.name : '',
+        date: newDate.value || null
       })
     })
 
@@ -218,11 +223,115 @@ const addExpense = async () => {
     newExpAmount.value = 0
     newExpCategory.value = ''
     newExpSubcategory.value = ''
+    newDate.value = ''
   } catch (err) {
     console.error('Błąd dodawania wydatku:', err)
     message.value = 'Problem z połączeniem z serwerem'
   }
 }
+
+const deleteIncome = async (income) => {
+  message.value = ''
+  const ok = window.confirm('Usunąć ten dochód?')
+  if (!ok) return
+
+  try {
+    const res = await fetch(`http://localhost:3000/api/income/${income._id}`, {
+      method: 'DELETE'
+    })
+    const data = await res.json()
+    if (!res.ok) {
+      message.value = data.error || 'Błąd usuwania dochodu'
+      return
+    }
+    await loadIncomes()
+  } catch (err) {
+    console.error('Błąd usuwania dochodu:', err)
+    message.value = 'Problem z połączeniem z serwerem'
+  }
+}
+
+const deleteExpense = async (expense) => {
+  message.value = ''
+  const ok = window.confirm('Usunąć ten wydatek?')
+  if (!ok) return
+
+  try {
+    const res = await fetch(`http://localhost:3000/api/expense/${expense._id}`, {
+      method: 'DELETE'
+    })
+    const data = await res.json()
+    if (!res.ok) {
+      message.value = data.error || 'Błąd usuwania wydatku'
+      return
+    }
+    await loadExpenses()
+  } catch (err) {
+    console.error('Błąd usuwania wydatku:', err)
+    message.value = 'Problem z połączeniem z serwerem'
+  }
+}
+
+// EDYCJA DOCHODÓW/WYDATKÓW
+const editingEntryId = ref('')
+const editingEntryType = ref('') // 'income' lub 'expense'
+const editingAmount = ref(0)
+
+const startEditIncome = (income) => {
+  editingEntryId.value = income._id
+  editingEntryType.value = 'income'
+  editingAmount.value = income.amount
+}
+
+const startEditExpense = (expense) => {
+  editingEntryId.value = expense._id
+  editingEntryType.value = 'expense'
+  editingAmount.value = expense.amount
+}
+
+const cancelEditEntry = () => {
+  editingEntryId.value = ''
+  editingEntryType.value = ''
+  editingAmount.value = 0
+}
+
+const saveEditEntry = async () => {
+  message.value = ''
+
+  if (!editingEntryId.value || !editingEntryType.value) return
+  if (!editingAmount.value && editingAmount.value !== 0) return
+
+  const endpoint =
+    editingEntryType.value === 'income'
+      ? `http://localhost:3000/api/income/${editingEntryId.value}`
+      : `http://localhost:3000/api/expense/${editingEntryId.value}`
+
+  try {
+    const res = await fetch(endpoint, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amount: Number(editingAmount.value) })
+    })
+
+    const data = await res.json()
+    if (!res.ok) {
+      message.value = data.error || 'Błąd edycji wpisu'
+      return
+    }
+
+    if (editingEntryType.value === 'income') {
+      await loadIncomes()
+    } else {
+      await loadExpenses()
+    }
+
+    cancelEditEntry()
+  } catch (err) {
+    console.error('Błąd edycji wpisu:', err)
+    message.value = 'Problem z połączeniem z serwerem'
+  }
+}
+
 
 onMounted(async () => {
   await Promise.all([
@@ -310,6 +419,16 @@ onMounted(async () => {
             </select>
           </div>
 
+          <div style="margin-bottom: 8px;">
+            <label>Data:</label><br />
+            <input
+              type="date"
+              v-model="newDate"
+              style="width: 100%; padding: 4px;"
+            />
+          </div>
+
+
           <button type="submit" style="padding: 6px 14px;">
             Zapisz dochód
           </button>
@@ -377,6 +496,16 @@ onMounted(async () => {
             </select>
           </div>
 
+          <div style="margin-bottom: 8px;">
+            <label>Data:</label><br />
+            <input
+              type="date"
+              v-model="newExpDate"
+              style="width: 100%; padding: 4px;"
+            />
+          </div>
+
+
           <button type="submit" style="padding: 6px 14px;">
             Zapisz wydatek
           </button>
@@ -402,15 +531,79 @@ onMounted(async () => {
             <th>Kategoria</th>
             <th>Podkategoria</th>
             <th>Data</th>
+            <th>Akcje</th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="income in incomes" :key="income._id">
             <td>{{ income.type }}</td>
-            <td>{{ income.amount }}</td>
+
+            <td>
+              <template
+                v-if="
+                  editingEntryId === income._id &&
+                  editingEntryType === 'income'
+                "
+              >
+                <input
+                  type="number"
+                  v-model="editingAmount"
+                  style="width: 80px; padding: 2px 4px;"
+                  step="0.01"
+                  min="0"
+                />
+              </template>
+              <template v-else>
+                {{ income.amount }}
+              </template>
+            </td>
+
             <td>{{ income.category }}</td>
             <td>{{ income.subcategory }}</td>
             <td>{{ new Date(income.createdAt).toLocaleDateString() }}</td>
+            <td>
+              <template
+                v-if="
+                  editingEntryId === income._id &&
+                  editingEntryType === 'income'
+                "
+              >
+                <button
+                  @click="saveEditEntry"
+                  style="
+                    padding: 2px 6px;
+                    font-size: 12px;
+                    margin-right: 4px;
+                  "
+                >
+                  Zapisz
+                </button>
+                <button
+                  @click="cancelEditEntry"
+                  style="padding: 2px 6px; font-size: 12px;"
+                >
+                  Anuluj
+                </button>
+              </template>
+              <template v-else>
+                <button
+                  @click="startEditIncome(income)"
+                  style="
+                    padding: 2px 6px;
+                    font-size: 12px;
+                    margin-right: 4px;
+                  "
+                >
+                  Edytuj
+                </button>
+                <button
+                  @click="deleteIncome(income)"
+                  style="padding: 2px 6px; font-size: 12px;"
+                >
+                  Usuń
+                </button>
+              </template>
+            </td>
           </tr>
         </tbody>
       </table>
@@ -436,15 +629,79 @@ onMounted(async () => {
             <th>Kategoria</th>
             <th>Podkategoria</th>
             <th>Data</th>
+            <th>Akcje</th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="expense in expenses" :key="expense._id">
             <td>{{ expense.type }}</td>
-            <td>{{ expense.amount }}</td>
+
+            <td>
+              <template
+                v-if="
+                  editingEntryId === expense._id &&
+                  editingEntryType === 'expense'
+                "
+              >
+                <input
+                  type="number"
+                  v-model="editingAmount"
+                  style="width: 80px; padding: 2px 4px;"
+                  step="0.01"
+                  min="0"
+                />
+              </template>
+              <template v-else>
+                {{ expense.amount }}
+              </template>
+            </td>
+
             <td>{{ expense.category }}</td>
             <td>{{ expense.subcategory }}</td>
             <td>{{ new Date(expense.createdAt).toLocaleDateString() }}</td>
+            <td>
+              <template
+                v-if="
+                  editingEntryId === expense._id &&
+                  editingEntryType === 'expense'
+                "
+              >
+                <button
+                  @click="saveEditEntry"
+                  style="
+                    padding: 2px 6px;
+                    font-size: 12px;
+                    margin-right: 4px;
+                  "
+                >
+                  Zapisz
+                </button>
+                <button
+                  @click="cancelEditEntry"
+                  style="padding: 2px 6px; font-size: 12px;"
+                >
+                  Anuluj
+                </button>
+              </template>
+              <template v-else>
+                <button
+                  @click="startEditExpense(expense)"
+                  style="
+                    padding: 2px 6px;
+                    font-size: 12px;
+                    margin-right: 4px;
+                  "
+                >
+                  Edytuj
+                </button>
+                <button
+                  @click="deleteExpense(expense)"
+                  style="padding: 2px 6px; font-size: 12px;"
+                >
+                  Usuń
+                </button>
+              </template>
+            </td>
           </tr>
         </tbody>
       </table>
@@ -453,6 +710,7 @@ onMounted(async () => {
     </div>
   </div>
 </template>
+
 
 
 

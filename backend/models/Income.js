@@ -21,7 +21,7 @@ const IncomeSchema = new mongoose.Schema({
     },
     subcategory:{
         type: String,
-        required: true
+        required: false
     },
     createdAt: {
         type: Date,
