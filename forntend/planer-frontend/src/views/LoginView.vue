@@ -1,43 +1,50 @@
 <script setup>
-import {ref} from 'vue'
+import { ref } from 'vue'
+
+const emit = defineEmits(['logged-in'])
 
 const email = ref('')
 const password = ref('')
-
 const message = ref('')
 const token = ref('')
 
 const handleLogin = async () => {
-    message.value = ''
-    token.value = ''
+  message.value = ''
+  token.value = ''
 
-    try {
-        const response = await fetch('http://localhost:3000/api/login', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                email: email.value,
-                password: password.value
-            })
-        })
+  try {
+    const response = await fetch('http://localhost:3000/api/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        email: email.value,
+        password: password.value
+      })
+    })
 
-        if (!response.ok){
-            const errorData = await response.json()
-            message.value = errorData.error || 'Błąd logowania'
-            return
-        }
-
-        const data = await response.json()
-        message.value = data.message
-        token.value = data.token
-    } catch (err){
-        console.error('Błąd żądania:', err)
-        message.value = 'Problem z połączeniem z serwerem'
+    if (!response.ok) {
+      const errorData = await response.json()
+      message.value = errorData.error || 'Błąd logowania'
+      return
     }
+
+    const data = await response.json()
+    message.value = data.message
+    token.value = data.token
+
+    localStorage.setItem('planer_token', data.token)
+    localStorage.setItem('planer_userId', data.user.id)
+
+    emit('logged-in')
+  } catch (err) {
+    console.error('Błąd żądania:', err)
+    message.value = 'Problem z połączeniem z serwerem'
+  }
 }
 </script>
+
 
 <template>
     <div style="max-width: 400px; margin: 40px auto;">

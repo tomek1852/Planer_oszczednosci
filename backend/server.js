@@ -5,6 +5,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const User = require('./models/User');
 const bcrypt = require('bcryptjs');
+const Income = require('./models/Income')
 
 const app = express();
 
@@ -92,6 +93,54 @@ app.post('/api/login', async (req, res) => {
         res.status(500).json({error: 'Błąd serwera przy logowaniu'});
     }
 });
+
+// Dodawanie dochodu
+app.post('/api/income', async (req, res) => {
+    try {
+      const { userId, type, amount, category, subcategory } = req.body
+  
+      // prosta walidacja
+      if (!userId || !type || !amount || !category || !subcategory) {
+        return res.status(400).json({ error: 'Brak wymaganych pól dochodu' })
+      }
+  
+      const income = new Income({
+        userId,
+        type,
+        amount,
+        category,
+        subcategory
+      })
+  
+      await income.save()
+  
+      res.status(201).json({
+        message: 'Dochód zapisany',
+        income
+      })
+    } catch (err) {
+      console.error('Błąd dodawania dochodu:', err)
+      res.status(500).json({ error: 'Błąd serwera przy dodawaniu dochodu' })
+    }
+})
+
+app.get('/api/income', async (req, res) => {
+    try {
+      const { userId } = req.query
+  
+      if (!userId) {
+        return res.status(400).json({ error: 'Brak parametru userId' })
+      }
+  
+      const incomes = await Income.find({ userId }).sort({ createdAt: -1 })
+  
+      res.json(incomes)
+    } catch (err) {
+      console.error('Błąd pobierania dochodów:', err)
+      res.status(500).json({ error: 'Błąd serwera przy pobieraniu dochodów' })
+    }
+})
+    
 
 app.listen(process.env.PORT, () => {
     console.log(`Serwer na http://localhost:${process.env.PORT}`);
