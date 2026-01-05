@@ -1,0 +1,147 @@
+<script setup>
+import { ref, onMounted, computed, watch } from 'vue'
+
+const categories = ref([])
+const message = ref('')
+
+const kind = ref('income') // domyślnie dochody
+const name = ref('')
+const parentId = ref('') // '' = kategoria główna
+
+const loadCategories = async () => {
+  message.value = ''
+
+  const userId = localStorage.getItem('planer_userId')
+  if (!userId) {
+    message.value = 'Brak danych użytkownika'
+    categories.value = []
+    return
+  }
+
+  try {
+    const response = await fetch(
+      `http://localhost:3000/api/categories?userId=${userId}&kind=${kind.value}`
+    )
+
+    if (!response.ok) {
+      const err = await response.json()
+      message.value = err.error || 'Błąd wczytywania kategorii'
+      return
+    }
+
+    categories.value = await response.json()
+  } catch (err) {
+    console.error('Błąd pobierania kategorii:', err)
+    message.value = 'Problem z połączeniem z serwerem'
+  }
+}
+
+watch(kind, () => {
+  loadCategories()
+})
+
+const addCategory = async () => {
+  message.value = ''
+
+  const userId = localStorage.getItem('planer_userId')
+  if (!userId) {
+    message.value = 'Brak danych użytkownika'
+    return
+  }
+
+  try {
+    const response = await fetch('http://localhost:3000/api/categories', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        userId,
+        kind: kind.value,
+        name: name.value,
+        parentId: parentId.value || null
+      })
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      message.value = data.error || 'Błąd dodawania kategorii'
+      return
+    }
+
+    name.value = ''
+    parentId.value = ''
+    await loadCategories()
+  } catch (err) {
+    console.error('Błąd dodawania kategorii:', err)
+    message.value = 'Problem z połączeniem z serwerem'
+  }
+}
+
+const mainCategories = computed(() =>
+  categories.value.filter(c => !c.parentId)
+)
+
+onMounted(() => {
+  loadCategories()
+})
+
+</script>
+
+<template>
+  <div style="max-width: 700px; margin: 40px auto;">
+    <h2>Kategorie i podkategorie</h2>
+
+    <p v-if="message">{{ message }}</p>
+
+    <!-- Wybór typu: dochody / wydatki -->
+    <div style="margin-bottom: 15px;">
+      <label>Typ:</label>
+      <select v-model="kind" @change="loadCategories" style="margin-left: 8px;">
+        <option value="income">Dochody</option>
+        <option value="expense">Wydatki</option>
+      </select>
+    </div>
+
+    <!-- Formularz dodania kategorii/podkategorii -->
+    <form @submit.prevent="addCategory" style="margin-bottom: 20px;">
+      <div style="margin-bottom: 8px;">
+        <label>Nazwa kategorii / podkategorii:</label><br />
+        <input
+          type="text"
+          v-model="name"
+          style="width: 100%; padding: 4px;"
+          required
+        />
+      </div>
+
+      <div style="margin-bottom: 8px;">
+        <label>Rodzic (opcjonalne):</label><br />
+        <select v-model="parentId" style="width: 100%; padding: 4px;">
+          <option value="">(kategoria główna)</option>
+          <option
+            v-for="cat in mainCategories"
+            :key="cat._id"
+            :value="cat._id"
+          >
+            {{ cat.name }}
+          </option>
+        </select>
+      </div>
+
+      <button type="submit" style="padding: 6px 14px;">
+        Zapisz kategorię
+      </button>
+    </form>
+
+    <!-- Prosta lista kategorii/podkategorii -->
+    <h3>Lista kategorii</h3>
+    <ul>
+      <li v-for="cat in categories" :key="cat._id">
+        <span v-if="!cat.parentId">{{ cat.name }}</span>
+        <span v-else>- {{ cat.name }}</span>
+      </li>
+    </ul>
+  </div>
+</template>
