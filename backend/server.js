@@ -8,13 +8,11 @@ const bcrypt = require('bcryptjs');
 const Income = require('./models/Income')
 const Expense = require('./models/Expense')
 const Category = require('./models/Category')
-
-
+const Budget = require('./models/Budget')
 
 const app = express();
 
 app.use(cors());
-
 app.use(express.json());
 
 mongoose.connect(process.env.DB_URI)
@@ -78,7 +76,7 @@ app.post('/api/login', async (req, res) => {
         }
 
         const passwordOk = await bcrypt.compare(password, user.password);
-        if(!password){
+        if(!passwordOk){
             return res.status(401).json({error: 'Nieprawidłowe dane logowania'});
         }
         //token 
@@ -100,36 +98,32 @@ app.post('/api/login', async (req, res) => {
 
 // Dodawanie dochodu
 app.post('/api/income', async (req, res) => {
-  try {
-    const { userId, type, amount, category, subcategory, date } = req.body
-
-    if (!userId || !type || !amount || !category) {
-      return res
-        .status(400)
-        .json({ error: 'userId, type, amount i category są wymagane' })
+    try {
+      const { userId, amount, category, subcategory, date } = req.body
+  
+      if (!userId || !amount || !category) {
+        return res.status(400).json({ error: 'userId, amount i category są wymagane' })
+      }
+  
+      const income = new Income({
+        userId,
+        amount,
+        category,
+        subcategory: subcategory || '',
+        createdAt: date ? new Date(date) : undefined
+      })
+  
+      await income.save()
+  
+      res.status(201).json({
+        message: 'Dochód zapisany',
+        income
+      })
+    } catch (err) {
+      console.error('Błąd dodawania dochodu:', err)
+      res.status(500).json({ error: 'Błąd serwera przy dodawaniu dochodu' })
     }
-
-    const income = new Income({
-      userId,
-      type,
-      amount,
-      category,
-      subcategory: subcategory || '',
-      createdAt: date ? new Date(date) : undefined
-    })
-
-    await income.save()
-
-    res.status(201).json({
-      message: 'Dochód zapisany',
-      income
-    })
-  } catch (err) {
-    console.error('Błąd dodawania dochodu:', err)
-    res.status(500).json({ error: 'Błąd serwera przy dodawaniu dochodu' })
-  }
 })
-
 
 app.get('/api/income', async (req, res) => {
     try {
@@ -148,18 +142,62 @@ app.get('/api/income', async (req, res) => {
     }
 })
 
+// Usuwanie pojedynczego dochodu
+app.delete('/api/income/:id', async (req, res) => {
+  try {
+    const { id } = req.params
+    const deleted = await Income.findByIdAndDelete(id)
+    if (!deleted) {
+      return res.status(404).json({ error: 'Dochód nie istnieje' })
+    }
+    res.json({ message: 'Dochód usunięty' })
+  } catch (err) {
+    console.error('Błąd usuwania dochodu:', err)
+    res.status(500).json({ error: 'Błąd serwera przy usuwaniu dochodu' })
+  }
+})
+
+// Aktualizacja kwoty dochodu
+app.put('/api/income/:id', async (req, res) => {
+  try {
+    const { id } = req.params
+    const { amount } = req.body
+
+    if (amount === undefined || amount === null) {
+      return res.status(400).json({ error: 'Pole amount jest wymagane' })
+    }
+
+    const updated = await Income.findByIdAndUpdate(
+      id,
+      { amount: Number(amount) },
+      { new: true }
+    )
+
+    if (!updated) {
+      return res.status(404).json({ error: 'Dochód nie istnieje' })
+    }
+
+    res.json({
+      message: 'Dochód zaktualizowany',
+      income: updated
+    })
+  } catch (err) {
+    console.error('Błąd aktualizacji dochodu:', err)
+    res.status(500).json({ error: 'Błąd serwera przy aktualizacji dochodu' })
+  }
+})
+
 // Dodawanie wydatku
 app.post('/api/expense', async (req, res) => {
   try {
-    const { userId, type, amount, category, subcategory, date } = req.body
+    const { userId, amount, category, subcategory, date } = req.body
 
-    if (!userId || !type || !amount || !category) {
-      return res.status(400).json({ error: 'Brak wymaganych pól wydatku' })
+    if (!userId || !amount || !category) {
+      return res.status(400).json({ error: 'userId, amount i category są wymagane' })
     }
 
     const expense = new Expense({
       userId,
-      type,
       amount,
       category,
       subcategory: subcategory || '',
@@ -196,7 +234,52 @@ app.get('/api/expense', async (req, res) => {
   }
 })
 
-// Pobranie kategorii użytkownika (opcjonalnie filtrowanie po kind)
+// Usuwanie pojedynczego wydatku
+app.delete('/api/expense/:id', async (req, res) => {
+  try {
+    const { id } = req.params
+    const deleted = await Expense.findByIdAndDelete(id)
+    if (!deleted) {
+      return res.status(404).json({ error: 'Wydatek nie istnieje' })
+    }
+    res.json({ message: 'Wydatek usunięty' })
+  } catch (err) {
+    console.error('Błąd usuwania wydatku:', err)
+    res.status(500).json({ error: 'Błąd serwera przy usuwaniu wydatku' })
+  }
+})
+
+// Aktualizacja kwoty wydatku
+app.put('/api/expense/:id', async (req, res) => {
+  try {
+    const { id } = req.params
+    const { amount } = req.body
+
+    if (amount === undefined || amount === null) {
+      return res.status(400).json({ error: 'Pole amount jest wymagane' })
+    }
+
+    const updated = await Expense.findByIdAndUpdate(
+      id,
+      { amount: Number(amount) },
+      { new: true }
+    )
+
+    if (!updated) {
+      return res.status(404).json({ error: 'Wydatek nie istnieje' })
+    }
+
+    res.json({
+      message: 'Wydatek zaktualizowany',
+      expense: updated
+    })
+  } catch (err) {
+    console.error('Błąd aktualizacji wydatku:', err)
+    res.status(500).json({ error: 'Błąd serwera przy aktualizacji wydatku' })
+  }
+})
+
+// Pobranie kategorii użytkownika
 app.get('/api/categories', async (req, res) => {
   try {
     const { userId, kind } = req.query
@@ -207,7 +290,7 @@ app.get('/api/categories', async (req, res) => {
 
     const filter = { userId }
     if (kind) {
-      filter.kind = kind // 'income' lub 'expense'
+      filter.kind = kind
     }
 
     const categories = await Category.find(filter).sort({ name: 1 })
@@ -256,7 +339,6 @@ app.delete('/api/categories/:id', async (req, res) => {
       return res.status(404).json({ error: 'Kategoria nie istnieje' })
     }
 
-    // UWAGA: sprawdzamy po nazwie, bo w Income/Expense trzymasz category jako string
     const hasIncomes = await Income.exists({ category: category.name })
     const hasExpenses = await Expense.exists({ category: category.name })
 
@@ -296,11 +378,9 @@ app.put('/api/categories/:id', async (req, res) => {
     const oldName = category.name
     const newName = name.trim()
 
-    // aktualizacja samej kategorii
     category.name = newName
     await category.save()
 
-    // HURTOWA aktualizacja dochodów i wydatków po nazwie kategorii
     await Income.updateMany(
       { category: oldName },
       { category: newName }
@@ -319,105 +399,147 @@ app.put('/api/categories/:id', async (req, res) => {
     res.status(500).json({ error: 'Błąd serwera przy aktualizacji kategorii' })
   }
 })
-    
-// Usuwanie pojedynczego dochodu
-app.delete('/api/income/:id', async (req, res) => {
+
+// ========== BUDŻET ==========
+
+// Pobieranie budżetów użytkownika na dany miesiąc + liczenie rzeczywistości
+app.get('/api/budget', async (req, res) => {
   try {
-    const { id } = req.params
-    const deleted = await Income.findByIdAndDelete(id)
-    if (!deleted) {
-      return res.status(404).json({ error: 'Dochód nie istnieje' })
+    const { userId, kind, month, year } = req.query
+
+    if (!userId || !kind || !month || !year) {
+      return res.status(400).json({ 
+        error: 'userId, kind, month i year są wymagane' 
+      })
     }
-    res.json({ message: 'Dochód usunięty' })
+
+    const budgets = await Budget.find({
+      userId,
+      kind,
+      month: parseInt(month),
+      year: parseInt(year)
+    })
+
+    // Dla każdego budżetu, liczę rzeczywistość
+    const budgetsWithActual = await Promise.all(
+      budgets.map(async (budget) => {
+        const filter = {
+          userId,
+          category: budget.category,
+          createdAt: {
+            $gte: new Date(`${year}-${String(month).padStart(2, '0')}-01`),
+            $lt: new Date(
+              month === '12'
+                ? `${parseInt(year) + 1}-01-01`
+                : `${year}-${String(parseInt(month) + 1).padStart(2, '0')}-01`
+            )
+          }
+        }
+
+        if (budget.subcategory) {
+          filter.subcategory = budget.subcategory
+        }
+
+        const Model = kind === 'income' ? Income : Expense
+        const expenses = await Model.find(filter)
+        const actualAmount = expenses.reduce((sum, e) => sum + e.amount, 0)
+
+        return {
+          ...budget.toObject(),
+          actualAmount,
+          difference: budget.plannedAmount - actualAmount
+        }
+      })
+    )
+
+    res.json(budgetsWithActual)
   } catch (err) {
-    console.error('Błąd usuwania dochodu:', err)
-    res.status(500).json({ error: 'Błąd serwera przy usuwaniu dochodu' })
+    console.error('Błąd pobierania budżetów:', err)
+    res.status(500).json({ error: 'Błąd serwera przy pobieraniu budżetów' })
   }
 })
 
-// Usuwanie pojedynczego wydatku
-app.delete('/api/expense/:id', async (req, res) => {
+// Dodawanie budżetu
+app.post('/api/budget', async (req, res) => {
   try {
-    const { id } = req.params
-    const deleted = await Expense.findByIdAndDelete(id)
-    if (!deleted) {
-      return res.status(404).json({ error: 'Wydatek nie istnieje' })
+    const { userId, kind, category, subcategory, month, year, plannedAmount } = req.body
+
+    if (!userId || !kind || !category || !month || !year || !plannedAmount) {
+      return res.status(400).json({ 
+        error: 'userId, kind, category, month, year i plannedAmount są wymagane' 
+      })
     }
-    res.json({ message: 'Wydatek usunięty' })
+
+    const budget = new Budget({
+      userId,
+      kind,
+      category,
+      subcategory: subcategory || '',
+      month: parseInt(month),
+      year: parseInt(year),
+      plannedAmount: Number(plannedAmount)
+    })
+
+    await budget.save()
+
+    res.status(201).json({
+      message: 'Budżet zapisany',
+      budget
+    })
   } catch (err) {
-    console.error('Błąd usuwania wydatku:', err)
-    res.status(500).json({ error: 'Błąd serwera przy usuwaniu wydatku' })
+    console.error('Błąd dodawania budżetu:', err)
+    res.status(500).json({ error: 'Błąd serwera przy dodawaniu budżetu' })
   }
 })
 
-
-// Aktualizacja dochodu - wszystkie pola
-app.put('/api/income/:id', async (req, res) => {
+// Aktualizacja budżetu
+app.put('/api/budget/:id', async (req, res) => {
   try {
     const { id } = req.params
-    const { amount, type, category, subcategory, date } = req.body
+    const { plannedAmount } = req.body
 
-    const updateData = {}
-    if (amount !== undefined) updateData.amount = Number(amount)
-    if (type) updateData.type = type
-    if (category) updateData.category = category
-    if (subcategory !== undefined) updateData.subcategory = subcategory
-    if (date) updateData.createdAt = new Date(date)
+    if (plannedAmount === undefined || plannedAmount === null) {
+      return res.status(400).json({ error: 'Pole plannedAmount jest wymagane' })
+    }
 
-    const updated = await Income.findByIdAndUpdate(
+    const updated = await Budget.findByIdAndUpdate(
       id,
-      updateData,
+      { plannedAmount: Number(plannedAmount) },
       { new: true }
     )
 
     if (!updated) {
-      return res.status(404).json({ error: 'Dochód nie istnieje' })
+      return res.status(404).json({ error: 'Budżet nie istnieje' })
     }
 
     res.json({
-      message: 'Dochód zaktualizowany',
-      income: updated
+      message: 'Budżet zaktualizowany',
+      budget: updated
     })
   } catch (err) {
-    console.error('Błąd aktualizacji dochodu:', err)
-    res.status(500).json({ error: 'Błąd serwera przy aktualizacji dochodu' })
+    console.error('Błąd aktualizacji budżetu:', err)
+    res.status(500).json({ error: 'Błąd serwera przy aktualizacji budżetu' })
   }
 })
 
-// Aktualizacja wydatku - wszystkie pola
-app.put('/api/expense/:id', async (req, res) => {
+// Usuwanie budżetu
+app.delete('/api/budget/:id', async (req, res) => {
   try {
     const { id } = req.params
-    const { amount, type, category, subcategory, date } = req.body
+    const deleted = await Budget.findByIdAndDelete(id)
 
-    const updateData = {}
-    if (amount !== undefined) updateData.amount = Number(amount)
-    if (type) updateData.type = type
-    if (category) updateData.category = category
-    if (subcategory !== undefined) updateData.subcategory = subcategory
-    if (date) updateData.createdAt = new Date(date)
-
-    const updated = await Expense.findByIdAndUpdate(
-      id,
-      updateData,
-      { new: true }
-    )
-
-    if (!updated) {
-      return res.status(404).json({ error: 'Wydatek nie istnieje' })
+    if (!deleted) {
+      return res.status(404).json({ error: 'Budżet nie istnieje' })
     }
 
-    res.json({
-      message: 'Wydatek zaktualizowany',
-      expense: updated
-    })
+    res.json({ message: 'Budżet usunięty' })
   } catch (err) {
-    console.error('Błąd aktualizacji wydatku:', err)
-    res.status(500).json({ error: 'Błąd serwera przy aktualizacji wydatku' })
+    console.error('Błąd usuwania budżetu:', err)
+    res.status(500).json({ error: 'Błąd serwera przy usuwaniu budżetu' })
   }
 })
-
 
 app.listen(process.env.PORT, () => {
     console.log(`Serwer na http://localhost:${process.env.PORT}`);
 });
+

@@ -6,11 +6,6 @@ const ExpenseSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
-  type: {
-    type: String,
-    enum: ['przewidywany', 'realny'],
-    required: true
-  },
   amount: {
     type: Number,
     required: true
@@ -21,7 +16,8 @@ const ExpenseSchema = new mongoose.Schema({
   },
   subcategory: {
     type: String,
-    required: true
+    required: false,
+    default: ''
   },
   createdAt: {
     type: Date,
