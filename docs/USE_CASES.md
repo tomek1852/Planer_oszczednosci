@@ -1,4 +1,4 @@
-# Przypadki użycia
+# Przypadki użycia.
 
 ## UC-01: Rejestracja nowego użytkownika
 
