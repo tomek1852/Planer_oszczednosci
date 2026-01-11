@@ -1,4 +1,4 @@
-# Wymagania projektu
+# Wymagania projektu.
 
 ## Wymagania funkcjonalne
 
