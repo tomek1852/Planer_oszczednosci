@@ -1,4 +1,4 @@
-# Instrukcja instalacji i uruchomienia
+# Instrukcja instalacji i uruchomienia.
 
 ## Wymagania wstępne
 
