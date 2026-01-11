@@ -1,4 +1,4 @@
-# Architektura systemu
+# Architektura systemu.
 
 ## Architektura wysokiego poziomu
 
