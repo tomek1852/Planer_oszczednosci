@@ -1,8 +1,8 @@
-# 💰 Planer Oszczędności
+# Planer Oszczędności
 
 Aplikacja webowa do zarządzania budżetem osobistym, śledzenia dochodów, wydatków i planowania oszczędności.
 
-## 📋 Opis projektu
+## Opis projektu
 
 Planer Oszczędności to narzędzie wspierające użytkowników w kontrolowaniu finansów osobistych poprzez:
 - Rejestrację i kategoryzację dochodów oraz wydatków
@@ -10,7 +10,7 @@ Planer Oszczędności to narzędzie wspierające użytkowników w kontrolowaniu 
 - Zarządzanie kategoriami i podkategoriami transakcji
 - Analizę wydatków w czasie rzeczywistym
 
-## 🚀 Stos technologiczny
+## Stos technologiczny
 
 **Backend:**
 - Node.js + Express 5.2.1
@@ -24,7 +24,7 @@ Planer Oszczędności to narzędzie wspierające użytkowników w kontrolowaniu 
 - Vue.js
 - Axios (komunikacja z API)
 
-## 📂 Struktura projektu
+## Struktura projektu
 
 ```
 Planer_oszczednosci/
@@ -44,7 +44,7 @@ Planer_oszczednosci/
 └── README.md
 ```
 
-## ⚙️ Szybki start
+## Szybki start
 
 ### Wymagania wstępne
 - Node.js (v14+)
@@ -70,7 +70,7 @@ npm run serve
 
 Szczegółowe instrukcje znajdują się w [docs/SETUP.md](./docs/SETUP.md)
 
-## 📖 Dokumentacja
+## Dokumentacja
 
 - **[Wymagania funkcjonalne i niefunkcjonalne](./docs/REQUIREMENTS.md)** - szczegółowy opis wymagań systemu
 - **[Architektura systemu](./docs/ARCHITECTURE.md)** - diagram i opis architektury
@@ -78,7 +78,7 @@ Szczegółowe instrukcje znajdują się w [docs/SETUP.md](./docs/SETUP.md)
 - **[Przypadki użycia](./docs/USE_CASES.md)** - scenariusze użycia aplikacji
 - **[Instrukcja instalacji](./docs/SETUP.md)** - krok po kroku jak uruchomić projekt
 
-## 🔑 Kluczowe funkcjonalności
+## Kluczowe funkcjonalności
 
 ### Zarządzanie użytkownikami
 - Rejestracja z hashowaniem haseł (bcrypt)
@@ -103,7 +103,7 @@ Szczegółowe instrukcje znajdują się w [docs/SETUP.md](./docs/SETUP.md)
 - Lista transakcji składających się na rzeczywistość
 - Zapobieganie duplikatom budżetu (ten sam miesiąc + kategoria)
 
-## 🛣️ Roadmap
+## Roadmap
 
 - [ ] Implementacja pełnego JWT (obecnie fake token)
 - [ ] Wykresy i wizualizacje wydatków
@@ -113,15 +113,11 @@ Szczegółowe instrukcje znajdują się w [docs/SETUP.md](./docs/SETUP.md)
 - [ ] Wielowalutowość
 - [ ] Raporty miesięczne/roczne
 
-## 🤝 Wkład w projekt
-
-Projekt jest rozwijany w ramach studiów informatycznych na UBB.
-
 ## 📄 Licencja
 
 ISC
 
-## 👨‍💻 Autor
+## Autor
 
 **tomek1852**
 - GitHub: [@tomek1852](https://github.com/tomek1852)
