@@ -1,4 +1,4 @@
-# Moduły systemu
+# Moduły systemu.
 
 ## Moduły backendowe
 
