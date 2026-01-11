@@ -420,7 +420,7 @@ app.get('/api/budget', async (req, res) => {
       year: parseInt(year)
     })
 
-    // Dla każdego budżetu, liczę rzeczywistość
+    // Dla każdego budżetu, liczę rzeczywistość i zbierę transakcje
     const budgetsWithActual = await Promise.all(
       budgets.map(async (budget) => {
         const filter = {
@@ -441,12 +441,18 @@ app.get('/api/budget', async (req, res) => {
         }
 
         const Model = kind === 'income' ? Income : Expense
-        const expenses = await Model.find(filter)
-        const actualAmount = expenses.reduce((sum, e) => sum + e.amount, 0)
+        const transactions = await Model.find(filter)
+        const actualAmount = transactions.reduce((sum, t) => sum + t.amount, 0)
 
         return {
           ...budget.toObject(),
           actualAmount,
+          transactionCount: transactions.length,
+          transactions: transactions.map(t => ({
+            createdAt: t.createdAt,
+            amount: t.amount,
+            subcategory: t.subcategory
+          })),
           difference: budget.plannedAmount - actualAmount
         }
       })
@@ -459,6 +465,7 @@ app.get('/api/budget', async (req, res) => {
   }
 })
 
+
 // Dodawanie budżetu
 app.post('/api/budget', async (req, res) => {
   try {
@@ -467,6 +474,22 @@ app.post('/api/budget', async (req, res) => {
     if (!userId || !kind || !category || !month || !year || !plannedAmount) {
       return res.status(400).json({ 
         error: 'userId, kind, category, month, year i plannedAmount są wymagane' 
+      })
+    }
+
+    // SPRAWDZENIE: czy już istnieje budżet na ten miesiąc/kategorię
+    const existingBudget = await Budget.findOne({
+      userId,
+      kind,
+      category,
+      subcategory: subcategory || '',
+      month: parseInt(month),
+      year: parseInt(year)
+    })
+
+    if (existingBudget) {
+      return res.status(400).json({ 
+        error: 'Budżet na tę kategorię w tym miesiącu już istnieje' 
       })
     }
 
@@ -491,6 +514,7 @@ app.post('/api/budget', async (req, res) => {
     res.status(500).json({ error: 'Błąd serwera przy dodawaniu budżetu' })
   }
 })
+
 
 // Aktualizacja budżetu
 app.put('/api/budget/:id', async (req, res) => {
